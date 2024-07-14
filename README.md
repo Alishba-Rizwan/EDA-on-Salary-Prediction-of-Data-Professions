@@ -82,6 +82,4 @@ This EDA project has been an enlightening journey into understanding salary tren
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
