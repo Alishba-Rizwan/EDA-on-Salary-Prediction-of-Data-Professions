@@ -1,0 +1,270 @@
+---
+title: "Exploratory Data Analysis on Salary Prediction Data"
+output: html_document
+date: "2024-07-13"
+---
+# Introduction
+This project presents an exploratory data analysis (EDA) of salary data for data professions. The goal is to understand the distribution of salaries, identify patterns and trends, and provide insights for further analysis.
+The dataset includes employee details such as names, gender, dates of joining, current dates, designations, ages, salaries, units, leaves used, leaves remaining, ratings, and past experience. <br>
+Observations: 2,639  <br>
+Variables: 13 variables<br>
+<br>
+
+_Steps Followed for EDA Analysis_
+
+The EDA was conducted in a systematic manner, following these key steps:
+
+1. **Loading the Libraries**: 
+   We started by loading the necessary libraries such as `ggplot2` and `dplyr` for data manipulation and visualization.
+
+2. **Loading the Data**: 
+   The salary data was loaded from a CSV file into the R environment for analysis.
+
+3. **Data Cleaning**:
+   Initial data cleaning was performed to handle missing values, correct data types, and remove any inconsistencies.
+
+4. **Summary Statistics**:
+   Basic summary statistics were computed to get an overview of the data, including measures of central tendency (mean, median) and dispersion (standard deviation, range).
+
+5. **Data Visualization**:
+   Various plots were created to visualize the data and uncover patterns:
+   - **Histogram**: To show the distribution of salaries.
+   - **Box Plot**: To compare the distribution of salaries across different job titles.
+   - **Scatter Plot**: To explore the relationship between salary and years of experience.
+
+6. **Correlation Analysis**:
+   The relationships between different variables were analyzed using correlation coefficients to identify significant correlations.
+
+7. **Pattern and Trend Identification**:
+   Patterns and trends in the data were identified through visualizations and statistical summaries, providing deeper insights into the factors affecting salaries.
+<br> <br>
+ **Data Overview**
+<br>Minimum Salary: 40,001<br>
+1st Quartile Salary: 43,418<br>
+Median Salary: 46,780<br>
+Mean Salary: 58,125<br>
+3rd Quartile Salary: 51,379 <br>
+Maximum Salary: 388,112 <br>
+
+```{r initial_setup, include=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+
+# Load the salary prediction data
+salary_data <- read.csv("E:/project/EDA/archive/Salary Prediction of Data Professions.csv", stringsAsFactors = FALSE)
+
+# Clean the data: Handle missing values
+median_age <- median(salary_data$AGE, na.rm = TRUE)
+salary_data$AGE[is.na(salary_data$AGE)] <- median_age
+
+# Convert dates to Date format
+salary_data$DOJ <- as.Date(salary_data$DOJ, format = "%m-%d-%Y")
+salary_data$CURRENT.DATE <- as.Date(salary_data$CURRENT.DATE, format = "%m-%d-%Y")
+
+# Convert SALARY column to numeric (if not already)
+salary_data$SALARY <- as.numeric(salary_data$SALARY)
+```
+```{r Salary_Distribution, echo=FALSE}
+# Histogram of salary distribution
+ggplot(salary_data, aes(x = SALARY)) + 
+  geom_histogram(binwidth = 15000, fill = "purple", color = "black") +
+  labs(title = "Salary Distribution", x = "Salary", y = "Frequency")
+```
+
+
+<br>
+Higher average salaries in professions like Data Scientist and Software Engineer.<br>
+Notable compensation disparities across job titles.
+
+
+```{r Salary_by_Designation, echo=FALSE}
+# Boxplot of salaries by designation
+ggplot(salary_data, aes(x = DESIGNATION, y = SALARY)) + 
+  geom_boxplot() +
+  labs(title = "Salary by Designation", x = "Designation", y = "Salary")
+```
+<br> Higher average salaries in professions like Data Scientist and Software Engineer. <br>
+Notable compensation disparities across job titles.
+```{r Average Salary by Job Title and Gender, echo=FALSE}
+# Calculate average salary by job title and gender
+salary_summary <- salary_data %>%
+  group_by(DESIGNATION, SEX) %>%
+  summarise(avg_salary = mean(SALARY, na.rm = TRUE))
+
+# Plot line chart
+ggplot(salary_summary, aes(x = DESIGNATION, y = avg_salary, color = SEX, group = SEX)) +
+  geom_line() +
+  labs(title = "Average Salary by Job Title and Gender",
+       x = "Job Title",
+       y = "Average Salary",
+       color = "Gender") +
+  theme_minimal()
+```
+<br>
+Males generally earn higher salaries than females, revealing a gender pay gap.
+
+
+```{r Gender Distribution, echo=FALSE}
+# Count the number of each gender
+gender_counts <- table(salary_data$SEX)
+
+# Calculate percentages
+total_workers <- sum(gender_counts)
+percentage_male <- (gender_counts["M"] / total_workers) * 100
+percentage_female <- (gender_counts["F"] / total_workers) * 100
+
+# Create a data frame for plotting
+gender_data <- data.frame(
+  Gender = c("Male", "Female"),
+  Percentage = c(percentage_male, percentage_female)
+)
+
+# Plotting the pie chart
+ggplot(gender_data, aes(x = "", y = Percentage, fill = Gender)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar("y", start = 0) +
+  labs(title = "Gender Distribution of Workers",
+       fill = "Gender",
+       y = NULL,
+       x = NULL) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  scale_fill_manual(values = c("blue", "pink")) +  # Custom colors for male and female
+  geom_text(aes(label = paste0(round(Percentage), "%")), position = position_stack(vjust = 0.5))  # Add percentage labels
+```
+<br> Higher percentage of male workers compared to female workers. <br>
+
+
+```{r Percentage Distribution of Workers by Age Group, echo=FALSE}
+age_summary <- salary_data %>%
+  group_by(AGE) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Plotting the bar chart
+ggplot(age_summary, aes(x = factor(AGE), y = percentage, fill = factor(AGE))) +
+  geom_bar(stat = "identity", color = "white") +
+  labs(title = "Percentage Distribution of Workers by Age Group",
+       x = "Age Group",
+       y = "Percentage (%)",
+       fill = "Age Group") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_discrete(name = "Age Group") +
+  geom_text(aes(label = paste0(round(percentage), "%")), vjust = -0.5)
+
+# Assuming SALARY column is numeric or can be converted to numeric
+salary_data$SALARY <- as.numeric(salary_data$SALARY)
+
+# Find the row with the maximum salary
+max_salary_row <- salary_data[which.max(salary_data$SALARY), ]
+
+
+
+# Count the number of occurrences of each designation
+designation_counts <- salary_data %>%
+  group_by(DESIGNATION) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))  # Arrange by descending count
+
+# Calculate percentage of each designation
+designation_counts <- designation_counts %>%
+  mutate(percentage = (count / sum(count)) * 100)
+
+# Plotting the bar chart
+ggplot(designation_counts, aes(x = DESIGNATION, y = percentage, fill = DESIGNATION)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Percentage Distribution of Designations",
+       x = "Designation",
+       y = "Percentage (%)",
+       fill = "Designation") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels for better readability
+  scale_y_continuous(labels = scales::percent_format())  # Format y-axis labels as percentages
+
+salary_data$DOJ <- as.Date(salary_data$DOJ, format = "%m/%d/%Y")
+salary_data$CURRENT.DATE <- as.Date(salary_data$CURRENT.DATE, format = "%m/%d/%Y")
+
+# Calculate tenure of work in years
+salary_data$Tenure <- as.numeric(difftime(salary_data$CURRENT.DATE, salary_data$DOJ, units = "days") / 365.25)
+```
+
+```{r tenor work, echo=FALSE}
+# Plotting age vs tenure
+ggplot(salary_data, aes(x = AGE, y = Tenure)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.7) +
+  labs(title = "Age vs Tenure of Work",
+       x = "Age",
+       y = "Tenure of Work (Years)") +
+  theme_minimal()
+```
+<br>Longer tenure generally associated with higher salaries.
+<br>Experience and longevity are rewarded with higher compensation.
+
+```{r four, echo=FALSE}
+
+library(GGally)
+
+ggpairs(salary_data[, c("AGE", "SALARY", "PAST.EXP")])
+ggplot(salary_data, aes(x = SALARY, fill = SEX)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Salary Density Plot by Gender")
+ggplot(salary_data, aes(x = DESIGNATION, y = SALARY, fill = SEX)) +
+  geom_violin() +
+  labs(title = "Salary Distribution by Profession and Gender") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(salary_data, aes(x = DESIGNATION, y = SALARY, fill = SEX)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Salaries by Profession and Gender") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(salary_data, aes(x = AGE, y = SALARY)) +
+  geom_point() +
+  facet_wrap(~ SEX) +
+  labs(title = "Salary vs Age by Gender")
+
+ggplot(salary_data, aes(x = SALARY, fill = SEX)) +
+  geom_histogram(binwidth = 5000, alpha = 0.7, position = "identity") +
+  labs(title = "Histogram of Salaries by Gender")
+ggplot(salary_data, aes(x = DESIGNATION, fill = SEX)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Count of Employees by Profession and Gender") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+salary_data$DOJ <- as.Date(salary_data$DOJ, format = "%m/%d/%Y")
+
+ggplot(salary_data, aes(x = DOJ, y = SALARY, color = SEX)) +
+  geom_line() +
+  labs(title = "Salary Trends Over Time by Gender")
+
+library(dplyr)
+
+gender_count <- salary_data %>%
+  group_by(SEX) %>%
+  summarise(count = n())
+
+ggplot(salary_data, aes(x = DESIGNATION, y = SALARY)) +
+  geom_segment(aes(x = DESIGNATION, xend = DESIGNATION, y = 0, yend = SALARY), color = "grey") +
+  geom_point(size = 4, color = "steelblue") +
+  labs(title = "Lollipop Chart of Salaries by Profession") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+<br><br>
+**_Insights:_** <br>
+The exploratory data analysis of salary data for data professions has provided valuable insights into the distribution and trends of salaries across various dimensions. Key findings include: <br>
+**1.Salary Distribution:** 
+The salary density plot revealed that the majority of salaries are concentrated within a specific range, with noticeable peaks indicating common salary brackets. There is a slight skew towards higher salaries, suggesting a concentration of data professionals in higher-paying roles.
+<br>**2.Salaries vs. Age by Gender:** 
+Analysis of salaries against age by gender showed that salary growth trends with age are relatively consistent between genders. However, some disparities were noted, with males generally earning slightly higher salaries at certain age ranges compared to females.
+<br>**3.Histogram of Salaries Over Gender:** 
+The histogram highlighted distinct salary distributions between genders. It was observed that males tend to have a broader range of salaries, while females are more concentrated in specific salary brackets. <br>
+**4.Counts of Employees Over Profession and Gender:** 
+The bar plot of employee counts by profession and gender uncovered gender disparities across various professions. Certain professions showed a higher representation of one gender over the other, indicating areas where gender balance may need improvement.
+<br>**5.Salaries Trend Over Time by Gender:**
+The trend analysis of salaries over time by gender revealed that both genders have experienced salary growth over the observed period. However, the rate of increase has not been uniform, with males generally experiencing a steeper rise in salaries over time.
+<br>**6.Lollipop Chart by Salaries and Profession:** 
+The lollipop chart provided a clear comparison of average salaries across different professions. Significant variations were observed, with some professions commanding notably higher average salaries than others. This highlights the importance of profession choice in determining salary levels.
+<br>In summary, the EDA has illuminated key patterns and disparities in salary data for data professions. These insights can inform further analysis and decision-making processes aimed at addressing salary disparities and promoting equitable salary growth across genders and professions.
